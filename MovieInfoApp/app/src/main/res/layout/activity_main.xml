@@ -21,6 +21,7 @@
             android:ems="10"
             android:inputType="textPersonName"
             android:text="영화명 검색"
+            android:textColor="#000000"
             android:textSize="20sp" />
 
         <ImageButton
