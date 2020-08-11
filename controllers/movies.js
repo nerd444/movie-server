@@ -23,6 +23,38 @@ exports.getMovies = async (req, res, next) => {
   }
 };
 
+// @desc    로그인한 유저의 영화데이터 불러오기
+// @url     GET /api/v1/movies
+// @request     *
+// @response    {success:true, movies:rows, count:count}
+exports.getAuthMovies = async (req, res, next) => {
+  let offset = req.query.offset;
+  let limit = req.query.limit;
+  try {
+    const [rows] = await connection.query(
+      `select m.*, if (f.id is not null, true, false) as is_favorite, 
+      count(r.movie_id) as reply_cnt,
+      round(avg(r.rating),1) as avg_rating
+      from movie as m
+      left join reply as r
+      on m.id = r.movie_id
+      left join favorite_movie as f
+      on m.id = f.movie_id
+      group by m.id
+      order by m.id limit ${offset},${limit}`
+    );
+    let count = rows.length;
+    res.status(200).json({ success: true, movies: rows, count: count });
+    return;
+  } catch (e) {
+    res.status(400).json({
+      success: false,
+      message: "영화데이터 전부 가져오는데 에러 발생",
+    });
+    return;
+  }
+};
+
 // @desc    영화명 검색해서 가져오기
 // @url     POST /api/v1/movies/search
 // @request     *

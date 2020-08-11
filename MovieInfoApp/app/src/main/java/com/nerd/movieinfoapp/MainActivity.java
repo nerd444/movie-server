@@ -11,6 +11,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -73,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
 
+        // 페이징 처리
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
@@ -100,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
         getNetworkData(path);
 
+        // 연도별로 정렬
         btn_array_year.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -112,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // 검색하기
         btn_search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -180,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // 영화데이터 전부 가져오기
     private void getNetworkData(String path) {
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.GET,
@@ -237,6 +243,7 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(request);
     }
 
+    // 영화데이터 전부 가져오기 페이징함수
     private void addNetworkData(String path) {
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.GET,
@@ -286,5 +293,74 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
         requestQueue.add(request);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.sign_up){
+            Intent i = new Intent(MainActivity.this, SignUpActivity.class);
+            startActivity(i);
+            finish();
+        }
+        if (id == R.id.login){
+            Intent i = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(i);
+            finish();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    public void addFavorite(int position){
+
+        // position을 통해서, 즐겨찾기 추가할 movie_id 값을 가져올 수 있습니다.
+        Movie movie = movieArrayList.get(position);
+        int movie_id = movie.getId();
+
+        JSONObject body = new JSONObject();
+        try {
+            body.put("movie_id", movie_id);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                Utils.BASEURL + "/api/v1/favorites",
+                body,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.i("AAA","add favorite : "+response.toString());
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                }
+        ){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+
+                SharedPreferences sp = getSharedPreferences(Utils.PREFERENCES_NAME,MODE_PRIVATE);
+                String token = sp.getString("token", null);
+
+                params.put("Authorization", "Bearer " + token);
+                return params;
+            }
+        };
+        Volley.newRequestQueue(MainActivity.this).add(request);
+
     }
 }
