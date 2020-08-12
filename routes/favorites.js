@@ -9,10 +9,8 @@ const {
 const router = express.Router();
 
 // /api/v1/favorites
-router
-  .route("/")
-  .post(auth, addFavorite)
-  .get(auth, getMyFavorites)
-  .delete(auth, deleteFavorite);
+router.route("/").post(auth, addFavorite).get(auth, getMyFavorites);
+
+router.route("/del").post(auth, deleteFavorite);
 
 module.exports = router;

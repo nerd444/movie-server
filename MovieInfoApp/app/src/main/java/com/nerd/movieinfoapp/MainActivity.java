@@ -415,64 +415,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void deleteFavorite(final int position){
+        Movie movie = movieArrayList.get(position);
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
-                Request.Method.GET,
-                Utils.BASEURL + "/api/v1/favorites?offset=" + offset + "&limit=" + limit,
-                null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONArray items = response.getJSONArray("items");
-                            for (int i = 0; i < items.length(); i++){
-                                int favorite_id = items.getInt(po);
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-
-                    }
-                }
-
-        ) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<>();
-
-                SharedPreferences sp = getSharedPreferences(Utils.PREFERENCES_NAME, MODE_PRIVATE);
-                String token = sp.getString("token", null);
-
-                params.put("Authorization", "Bearer " + token);
-                return params;
-            }
-        };
-        Volley.newRequestQueue(MainActivity.this).add(jsonObjectRequest);
+        // 서버에 보내기 위해서 필요
+        int movie_id = movie.getId();
 
         JSONObject body = new JSONObject();
         try {
-            body.put("favorite_id", favorite_id);
+            body.put("movie_id", movie_id);
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
         JsonObjectRequest request = new JsonObjectRequest(
-                Request.Method.DELETE,
+                Request.Method.POST,
                 Utils.BASEURL + "/api/v1/favorites",
                 body,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Log.i("AAA","delete favorite : "+response.toString());
-                        // 어레이리스트의 값을 변경시켜줘야 한다.
                         Movie movie = movieArrayList.get(position);
                         movie.setIs_favorite(0);
-
                         recyclerViewAdapter.notifyDataSetChanged();
                     }
                 },
@@ -486,15 +449,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String, String> params = new HashMap<>();
-
-                SharedPreferences sp = getSharedPreferences(Utils.PREFERENCES_NAME,MODE_PRIVATE);
-                String token = sp.getString("token", null);
-
                 params.put("Authorization", "Bearer " + token);
                 return params;
             }
         };
-        Volley.newRequestQueue(MainActivity.this).add(request);
-
+        requestQueue.add(request);
     }
 }
