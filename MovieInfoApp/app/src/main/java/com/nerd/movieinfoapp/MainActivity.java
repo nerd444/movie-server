@@ -426,7 +426,7 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             JSONArray items = response.getJSONArray("items");
                             for (int i = 0; i < items.length(); i++){
-                                int favorite_id = items.getInt("favorite_id");
+                                int favorite_id = items.getInt(po);
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();

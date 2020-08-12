@@ -50,15 +50,16 @@ exports.getMyFavorites = async (req, res, next) => {
 // @route   DELETE /api/v1/favorites
 // @request favorite_id
 exports.deleteFavorite = async (req, res, next) => {
-  let favorite_id = req.body.favorite_id;
+  let movie_id = req.body.movie_id;
+  let user_id = req.user.id;
 
   // favorite_id있는지 체크
-  if (!favorite_id) {
+  if (!movie_id) {
     res.status(400).json({ message: "favorite_id가 없습니다." });
     return;
   }
 
-  let query = `delete from favorite_movie where id = ${favorite_id}`;
+  let query = `delete from favorite_movie where user_id = ${user_id} and movie_id = ${movie_id}`;
   try {
     [result] = await connection.query(query);
     res
