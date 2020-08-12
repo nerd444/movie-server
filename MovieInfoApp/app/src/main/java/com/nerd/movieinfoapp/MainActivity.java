@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     //정렬을 위한 변수
     String order = "";
     String path = "/api/v1/movies";
+    String token;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +102,17 @@ public class MainActivity extends AppCompatActivity {
 
         requestQueue = Volley.newRequestQueue(MainActivity.this);
 
-        getNetworkData(path);
+        SharedPreferences sp = getSharedPreferences(Utils.PREFERENCES_NAME,MODE_PRIVATE);
+        token = sp.getString("token",null);
+
+        if (token != null){
+            path = "/api/v1/movies/auth";
+        }else {
+            path = "/api/v1/movies";
+        }
+
+
+       getNetworkData(path);
 
         // 연도별로 정렬
         btn_array_year.setOnClickListener(new View.OnClickListener() {
@@ -155,9 +166,17 @@ public class MainActivity extends AppCompatActivity {
                                         String genre = jsonObject.getString("genre");
                                         String attendance = jsonObject.getString("attendance");
                                         String year = jsonObject.getString("year");
+
+                                        int is_favorite;
+                                        if (movies.getJSONObject(i).isNull("is_favorite")){
+                                            is_favorite = 0;
+                                        }else {
+                                            is_favorite = movies.getJSONObject(i).getInt("is_favorite");
+                                        }
+
                                         Log.i("검색", response.toString());
 
-                                        Movie movie = new Movie(id, title, genre, attendance, year);
+                                        Movie movie = new Movie(id, title, genre, attendance, year, is_favorite);
                                         movieArrayList.add(movie);
                                     }
                                     recyclerViewAdapter = new RecyclerViewAdapter(MainActivity.this, movieArrayList);
@@ -189,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
     private void getNetworkData(String path) {
         JsonObjectRequest request = new JsonObjectRequest(
                 Request.Method.GET,
-                Utils.BASEURL + path +"?offset="+offset+"&limit="+limit+"&order="+order,
+                Utils.BASEURL + path +"?offset="+offset+"&limit="+limit,
                 null,
                 new Response.Listener<JSONObject>() {
                     @Override
@@ -210,10 +229,16 @@ public class MainActivity extends AppCompatActivity {
                                     String genre = jsonObject.getString("genre");
                                     String attendance = jsonObject.getString("attendance");
                                     String year = jsonObject.getString("year");
+                                    int is_favorite;
+                                    if (movies.getJSONObject(i).isNull("is_favorite")){
+                                        is_favorite = 0;
+                                    }else {
+                                        is_favorite = movies.getJSONObject(i).getInt("is_favorite");
+                                    }
 
                                     Log.i("가져와", response.toString());
 
-                                    Movie movie = new Movie(id, title, genre, attendance, year);
+                                    Movie movie = new Movie(id, title, genre, attendance, year, is_favorite);
                                     movieArrayList.add(movie);
                                 }
                                 recyclerViewAdapter = new RecyclerViewAdapter(MainActivity.this, movieArrayList);
@@ -239,7 +264,14 @@ public class MainActivity extends AppCompatActivity {
                         Log.i("가져와", error.toString());
                     }
                 }
-        );
+        ){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("Authorization", "Bearer " + token);
+                return params;
+            }
+        };
         requestQueue.add(request);
     }
 
@@ -267,10 +299,16 @@ public class MainActivity extends AppCompatActivity {
                                 String genre = jsonObject.getString("genre");
                                 String attendance = jsonObject.getString("attendance");
                                 String year = jsonObject.getString("year");
+                                int is_favorite;
+                                if (movies.getJSONObject(i).isNull("is_favorite")){
+                                    is_favorite = 0;
+                                }else {
+                                    is_favorite = movies.getJSONObject(i).getInt("is_favorite");
+                                }
 
                                 Log.i("가져와", response.toString());
 
-                                Movie movie = new Movie(id, title, genre, attendance, year);
+                                Movie movie = new Movie(id, title, genre, attendance, year, is_favorite);
                                 movieArrayList.add(movie);
                             }
 
@@ -291,7 +329,14 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 }
-        );
+        ){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("Authorization", "Bearer " + token);
+                return params;
+            }
+        };
         requestQueue.add(request);
     }
 
@@ -319,7 +364,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void addFavorite(int position){
+    public void addFavorite(final int position){
 
         // position을 통해서, 즐겨찾기 추가할 movie_id 값을 가져올 수 있습니다.
         Movie movie = movieArrayList.get(position);
@@ -340,6 +385,95 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         Log.i("AAA","add favorite : "+response.toString());
+                        // 어레이리스트의 값을 변경시켜줘야 한다.
+                        Movie movie = movieArrayList.get(position);
+                        movie.setIs_favorite(1);
+
+                        recyclerViewAdapter.notifyDataSetChanged();
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                }
+        ){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+
+                SharedPreferences sp = getSharedPreferences(Utils.PREFERENCES_NAME,MODE_PRIVATE);
+                String token = sp.getString("token", null);
+
+                params.put("Authorization", "Bearer " + token);
+                return params;
+            }
+        };
+        Volley.newRequestQueue(MainActivity.this).add(request);
+
+    }
+
+    public void deleteFavorite(final int position){
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
+                Request.Method.GET,
+                Utils.BASEURL + "/api/v1/favorites?offset=" + offset + "&limit=" + limit,
+                null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            JSONArray items = response.getJSONArray("items");
+                            for (int i = 0; i < items.length(); i++){
+                                int favorite_id = items.getInt("favorite_id");
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                }
+
+        ) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+
+                SharedPreferences sp = getSharedPreferences(Utils.PREFERENCES_NAME, MODE_PRIVATE);
+                String token = sp.getString("token", null);
+
+                params.put("Authorization", "Bearer " + token);
+                return params;
+            }
+        };
+        Volley.newRequestQueue(MainActivity.this).add(jsonObjectRequest);
+
+        JSONObject body = new JSONObject();
+        try {
+            body.put("favorite_id", favorite_id);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.DELETE,
+                Utils.BASEURL + "/api/v1/favorites",
+                body,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.i("AAA","delete favorite : "+response.toString());
+                        // 어레이리스트의 값을 변경시켜줘야 한다.
+                        Movie movie = movieArrayList.get(position);
+                        movie.setIs_favorite(0);
+
+                        recyclerViewAdapter.notifyDataSetChanged();
                     }
                 },
                 new Response.ErrorListener() {

@@ -20,6 +20,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.nerd.movieinfoapp.MainActivity;
 import com.nerd.movieinfoapp.R;
 import com.nerd.movieinfoapp.SignUpActivity;
 import com.nerd.movieinfoapp.model.Movie;
@@ -77,6 +78,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         } catch (ParseException e) {
             e.printStackTrace();
         }
+
+        if (movie.getIs_favorite() == 1){
+            holder.btn_star.setImageResource(android.R.drawable.btn_star_big_on);
+        }else {
+            holder.btn_star.setImageResource(android.R.drawable.btn_star_big_off);
+        }
     }
 
     @Override
@@ -119,9 +126,14 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                         // 호출하는 코드는 메인 액티비티에 메소드로 만들고,
                         // 여기에서는 position 값만 넘겨주도록 한다.
 
-                        // 별표가 이미 있으면, 즐겨찾기 삭제 함수 호출!
-
-                        // 별표가 없으면, 즐겨찾기 추가 함수 호출
+                        int is_favorite = movieArrayList.get(position).getIs_favorite();
+                        if (is_favorite == 1){
+                            // 별표가 이미 있으면, 즐겨찾기 삭제 함수 호출!
+                            ((MainActivity)context).deleteFavorite(position);
+                        }else {
+                            // 별표가 없으면, 즐겨찾기 추가 함수 호출
+                            ((MainActivity)context).addFavorite(position);
+                        }
 
                     }
 
